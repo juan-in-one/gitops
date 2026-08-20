@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metrics-server
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # Chart oficial referenciado directo desde su repo de Helm — no hace
+    # falta un wrapper propio como con Postgres, porque no necesitamos
+    # ninguna dependencia extra ni lógica propia encima.
+    repoURL: https://kubernetes-sigs.github.io/metrics-server/
+    chart: metrics-server
+    targetRevision: "3.14.0"
+    helm:
+      valuesObject:
+        args:
+          # Necesario en clústeres locales (OrbStack/kind/minikube): el
+          # certificado del kubelet no es válido para verificación TLS
+          # estándar. En un clúster cloud real no haría falta este flag.
+          - --kubelet-insecure-tls
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
