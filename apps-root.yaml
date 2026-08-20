@@ -1,0 +1,25 @@
+# "App of apps": la única Application que se aplica a mano (arranque en
+# frío inevitable de todo GitOps). A partir de aquí, ArgoCD vigila la carpeta
+# apps/ de este mismo repo y gestiona las demás Applications (postgres,
+# car-api, y las que se añadan en el futuro) él solo — un `git push` a
+# apps/*.yaml ya no necesita ningún `kubectl apply` manual.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apps-root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/gitops.git
+    targetRevision: main
+    path: apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
