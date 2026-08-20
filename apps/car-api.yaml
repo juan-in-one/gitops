@@ -21,6 +21,11 @@ spec:
           databaseUrl: "postgresql+asyncpg://car_api:car_api@postgres-postgresql.platform.svc.cluster.local:5432/car_api"
         ingress:
           enabled: false # sin controlador de Ingress instalado todavía en OrbStack
+        imagePullSecrets:
+          # Secret dockerconfigjson creado directo en el clúster (no en Git,
+          # namespace car-api) con credenciales de lectura del paquete
+          # privado de GHCR: kubectl create secret docker-registry ghcr-pull...
+          - name: ghcr-pull
   destination:
     server: https://kubernetes.default.svc
     namespace: car-api
