@@ -1,9 +1,0 @@
-apiVersion: v2
-name: vault
-description: Vault de la plataforma juan-in-one (wrapper del chart oficial de HashiCorp)
-type: application
-version: 0.1.0
-dependencies:
-  - name: vault
-    version: "0.34.1" # empaqueta Vault 2.0.4
-    repository: https://helm.releases.hashicorp.com
