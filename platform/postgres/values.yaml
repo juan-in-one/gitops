@@ -1,6 +1,13 @@
 # Valores para el chart de Bitnami (namespace "postgresql" porque es el
 # nombre de la dependencia declarada en Chart.yaml).
 postgresql:
+  image:
+    # Bitnami movió su catálogo gratuito a este registro "legacy" (snapshot
+    # congelado) a mediados de 2025; el registro por defecto del chart ya
+    # requiere suscripción de pago. Ver Chart.yaml.
+    registry: docker.io
+    repository: bitnamilegacy/postgresql
+
   auth:
     # Placeholders de desarrollo, igual que en car-api/chart/values.yaml — la
     # gestión de secretos real (Sealed Secrets / External Secrets / SOPS)

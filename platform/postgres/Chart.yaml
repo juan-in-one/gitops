@@ -9,5 +9,8 @@ type: application
 version: 0.1.0
 dependencies:
   - name: postgresql
-    version: "15.5.38" # empaqueta Postgres 16.4.0, misma major que en dev/car-api
+    # Bitnami retiró Postgres 16 de su catálogo gratuito a mediados de 2025;
+    # 17.6.0 es la única versión que sigue disponible sin pago (registro
+    # "bitnamilegacy", ver values.yaml). Ver wiki/projects/juan-in-one.md.
+    version: "16.7.27" # empaqueta Postgres 17.6.0
     repository: https://charts.bitnami.com/bitnami
