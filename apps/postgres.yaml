@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-postgres
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/gitops.git
+    targetRevision: main
+    path: platform/postgres
+    helm:
+      releaseName: postgres # fija el nombre del Service: postgres-postgresql
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform
+  syncPolicy:
+    automated:
+      prune: true # borra del clúster lo que se borre del repo
+      selfHeal: true # si alguien toca el clúster a mano, ArgoCD lo revierte
+    syncOptions:
+      - CreateNamespace=true

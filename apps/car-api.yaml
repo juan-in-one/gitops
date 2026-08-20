@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: car-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/car-api.git
+    targetRevision: main
+    path: chart
+    helm:
+      releaseName: car-api
+      # Override del placeholder de desarrollo de car-api/chart/values.yaml:
+      # apunta al Postgres compartido real de la plataforma (Service
+      # "postgres-postgresql" en el namespace "platform", ver postgres.yaml).
+      # Este override vive aquí (repo de plataforma), no en car-api, porque es
+      # una decisión de "dónde se despliega", no de "cómo es la app".
+      valuesObject:
+        secret:
+          databaseUrl: "postgresql+asyncpg://car_api:car_api@postgres-postgresql.platform.svc.cluster.local:5432/car_api"
+        ingress:
+          enabled: false # sin controlador de Ingress instalado todavía en OrbStack
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: car-api
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

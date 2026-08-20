@@ -1,0 +1,13 @@
+apiVersion: v2
+name: postgres
+description: >
+  Postgres compartido de la plataforma juan-in-one — una única instancia usada
+  por todos los microservicios (car-api, sport-api, ...), cada uno con su
+  propio usuario/base de datos lógica dentro de ella (nunca comparten esquema).
+  Wrapper del chart oficial de Bitnami en vez de un StatefulSet escrito a mano.
+type: application
+version: 0.1.0
+dependencies:
+  - name: postgresql
+    version: "15.5.38" # empaqueta Postgres 16.4.0, misma major que en dev/car-api
+    repository: https://charts.bitnami.com/bitnami

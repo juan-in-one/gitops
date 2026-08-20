@@ -1,0 +1,19 @@
+# Valores para el chart de Bitnami (namespace "postgresql" porque es el
+# nombre de la dependencia declarada en Chart.yaml).
+postgresql:
+  auth:
+    # Placeholders de desarrollo, igual que en car-api/chart/values.yaml — la
+    # gestión de secretos real (Sealed Secrets / External Secrets / SOPS)
+    # queda pendiente como paso aparte, ver wiki/projects/juan-in-one.md.
+    postgresPassword: "changeme-postgres-admin" # usuario admin "postgres"
+    username: car_api # primer usuario/BD lógica creada al arrancar
+    password: "car_api"
+    database: car_api
+    # NOTA: el chart de Bitnami solo crea UN usuario/BD extra en el primer
+    # arranque (los de arriba). Cuando llegue sport-api, hará falta añadir un
+    # script de init (postgresql.primary.initdb.scripts) para crear su propio
+    # usuario/BD sin tocar los de car_api ya existentes.
+
+  primary:
+    persistence:
+      size: 1Gi

@@ -1,0 +1,4 @@
+# Dependencias de Helm descargadas (helm dependency update). Se resuelven de
+# nuevo a partir de Chart.lock, no se versionan.
+charts/
+*.tgz
