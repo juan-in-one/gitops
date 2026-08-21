@@ -11,14 +11,10 @@ spec:
     path: chart
     helm:
       releaseName: car-api
-      # Override del placeholder de desarrollo de car-api/chart/values.yaml:
-      # apunta al Postgres compartido real de la plataforma (Service
-      # "postgres-postgresql" en el namespace "platform", ver postgres.yaml).
-      # Este override vive aquí (repo de plataforma), no en car-api, porque es
-      # una decisión de "dónde se despliega", no de "cómo es la app".
+      # El Secret "car-api" (con DATABASE_URL) ya no lo crea este values
+      # override — lo crea External Secrets Operator desde Vault, ver
+      # platform/secrets/externalsecret-car-api.yaml.
       valuesObject:
-        secret:
-          databaseUrl: "postgresql+asyncpg://car_api:car_api@postgres-postgresql.platform.svc.cluster.local:5432/car_api"
         ingress:
           enabled: false # sin controlador de Ingress instalado todavía en OrbStack
         imagePullSecrets:

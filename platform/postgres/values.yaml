@@ -9,12 +9,13 @@ postgresql:
     repository: bitnamilegacy/postgresql
 
   auth:
-    # Placeholders de desarrollo, igual que en car-api/chart/values.yaml — la
-    # gestión de secretos real (Sealed Secrets / External Secrets / SOPS)
-    # queda pendiente como paso aparte, ver wiki/projects/juan-in-one.md.
-    postgresPassword: "changeme-postgres-admin" # usuario admin "postgres"
-    username: car_api # primer usuario/BD lógica creada al arrancar
-    password: "car_api"
+    # Sin contraseñas en texto plano: las trae External Secrets Operator
+    # desde Vault (secret/postgres) al Secret "postgres-credentials", ver
+    # platform/secrets/externalsecret-postgres.yaml. Las claves
+    # "postgres-password"/"password" ya son las que usa el chart por
+    # defecto (secretKeys.*), no hace falta indicarlas aparte.
+    existingSecret: postgres-credentials
+    username: car_api # primer usuario/BD lógica creada al arrancar (no es secreto)
     database: car_api
     # NOTA: el chart de Bitnami solo crea UN usuario/BD extra en el primer
     # arranque (los de arriba). Cuando llegue sport-api, hará falta añadir un
