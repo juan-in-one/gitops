@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sport-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/sport-api.git
+    targetRevision: main
+    path: chart
+    helm:
+      releaseName: sport-api
+      # El Secret "sport-api" (con DATABASE_URL) lo crea External Secrets
+      # Operator desde Vault, ver platform/secrets/externalsecret-sport-api.yaml.
+      valuesObject:
+        ingress:
+          enabled: false # sin controlador de Ingress instalado todavía en OrbStack
+        imagePullSecrets:
+          # Secret dockerconfigjson creado directo en el clúster (no en Git,
+          # namespace sport-api) con credenciales de lectura del paquete
+          # privado de GHCR: kubectl create secret docker-registry ghcr-pull...
+          - name: ghcr-pull
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sport-api
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
