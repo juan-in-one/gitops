@@ -15,7 +15,14 @@ spec:
       # Operator desde Vault, ver platform/secrets/externalsecret-sport-api.yaml.
       valuesObject:
         ingress:
-          enabled: false # sin controlador de Ingress instalado todavía en OrbStack
+          enabled: true
+          # Mismo host que car-api/web — ingress-nginx fusiona las reglas de
+          # varios Ingress que comparten host en una sola configuración.
+          host: juan-in-one.local
+          path: "/api/sport-api(/|$)(.*)"
+          pathType: ImplementationSpecific
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /$2
         imagePullSecrets:
           # Secret dockerconfigjson creado directo en el clúster (no en Git,
           # namespace sport-api) con credenciales de lectura del paquete

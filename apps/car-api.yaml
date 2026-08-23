@@ -16,7 +16,16 @@ spec:
       # platform/secrets/externalsecret-car-api.yaml.
       valuesObject:
         ingress:
-          enabled: false # sin controlador de Ingress instalado todavía en OrbStack
+          enabled: true
+          # Un único host para toda la plataforma (web + APIs), servido por
+          # ingress-nginx (ver gitops/apps/ingress-nginx.yaml). El prefijo
+          # /api/car-api solo existe aquí, a nivel de Ingress — car-api no
+          # sabe nada de él, sigue respondiendo en /health, /maintenance-events...
+          host: juan-in-one.local
+          path: "/api/car-api(/|$)(.*)"
+          pathType: ImplementationSpecific
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /$2
         imagePullSecrets:
           # Secret dockerconfigjson creado directo en el clúster (no en Git,
           # namespace car-api) con credenciales de lectura del paquete
