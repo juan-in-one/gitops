@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/web.git
+    targetRevision: main
+    path: chart
+    helm:
+      releaseName: web
+      valuesObject:
+        ingress:
+          enabled: true
+          # Mismo host que car-api/sport-api — ingress-nginx fusiona las
+          # reglas de varios Ingress que comparten host. path "/" debe ir
+          # después de /api/car-api y /api/sport-api en la prioridad de
+          # ingress-nginx (que ya ordena por especificidad de path, no hace
+          # falta indicarlo a mano).
+          host: juan-in-one.local
+          path: /
+        imagePullSecrets:
+          # Secret dockerconfigjson creado directo en el clúster (no en Git,
+          # namespace web) con credenciales de lectura del paquete privado
+          # de GHCR: kubectl create secret docker-registry ghcr-pull...
+          - name: ghcr-pull
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: web
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
