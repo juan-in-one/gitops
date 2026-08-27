@@ -12,6 +12,14 @@ spec:
     helm:
       releaseName: web
       valuesObject:
+        image:
+          # Tag inmutable (el hash corto del commit, que el CI ya publica
+          # junto a "latest") en vez de "latest": con un tag fijo, Kubernetes
+          # nunca detecta que hay imagen nueva y no la redespliega, aunque se
+          # haya publicado una de verdad. Hay que actualizar esto a mano en
+          # cada despliegue nuevo (o automatizarlo más adelante con ArgoCD
+          # Image Updater).
+          tag: sha-4ae6196
         ingress:
           enabled: true
           # Mismo host que car-api/sport-api — ingress-nginx fusiona las
