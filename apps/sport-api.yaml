@@ -14,6 +14,11 @@ spec:
       # El Secret "sport-api" (con DATABASE_URL) lo crea External Secrets
       # Operator desde Vault, ver platform/secrets/externalsecret-sport-api.yaml.
       valuesObject:
+        image:
+          # Tag inmutable del commit publicado — con "latest" (el valor por
+          # defecto del chart) Kubernetes no detecta que hay imagen nueva y
+          # no la redespliega. Ver gitops/apps/web.yaml y log.md 2026-08-27.
+          tag: sha-e13a00f
         ingress:
           enabled: true
           # Mismo host que car-api/web — ingress-nginx fusiona las reglas de
