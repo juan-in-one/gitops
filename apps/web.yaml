@@ -19,7 +19,7 @@ spec:
           # haya publicado una de verdad. Hay que actualizar esto a mano en
           # cada despliegue nuevo (o automatizarlo más adelante con ArgoCD
           # Image Updater).
-          tag: sha-ef8b769
+          tag: sha-4ba1577
         ingress:
           enabled: true
           # Mismo host que car-api/sport-api — ingress-nginx fusiona las
