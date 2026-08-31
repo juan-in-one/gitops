@@ -1,0 +1,35 @@
+# Valores para el chart oficial (namespace "kube-prometheus-stack", nombre de
+# la dependencia declarada en Chart.yaml). Solo lo mínimo para arrancar en un
+# clúster local de un solo nodo — se irá ampliando en fases posteriores.
+kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+      retention: 7d # suficiente para practicar sin llenar el disco del portátil
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            resources:
+              requests:
+                storage: 5Gi
+
+  alertmanager:
+    alertmanagerSpec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            resources:
+              requests:
+                storage: 1Gi
+    # Sin receptores configurados todavía (Slack/email/...) — eso es la Fase D
+    # del roadmap. De momento solo queda desplegado, sin avisar a nadie.
+
+  grafana:
+    persistence:
+      enabled: true
+      size: 1Gi
+    # A propósito NO se fija admin.password aquí: si se deja vacío, el propio
+    # chart genera un Secret con una contraseña aleatoria en el primer
+    # arranque -> cero secretos en texto plano en git, mismo principio que ya
+    # aplicasteis con Vault/ESO para postgres. Se recupera con:
+    #   kubectl get secret monitoring-grafana -n monitoring \
+    #     -o jsonpath='{.data.admin-password}' | base64 -d

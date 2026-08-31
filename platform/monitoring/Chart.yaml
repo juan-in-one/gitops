@@ -1,0 +1,12 @@
+apiVersion: v2
+name: monitoring
+description: >
+  Observabilidad de la plataforma juan-in-one — Fase A: Prometheus + Grafana +
+  Alertmanager vía el chart oficial kube-prometheus-stack (Prometheus Operator).
+  Wrapper como postgres/vault, en vez de instalar cada pieza suelta a mano.
+type: application
+version: 0.1.0
+dependencies:
+  - name: kube-prometheus-stack
+    version: "88.6.2" # empaqueta Prometheus Operator v0.93.1
+    repository: https://prometheus-community.github.io/helm-charts

@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-monitoring
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/gitops.git
+    targetRevision: main
+    path: platform/monitoring
+    helm:
+      releaseName: monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true # los 10 CRDs del chart (Prometheus, Alertmanager,
+        # ServiceMonitor, PrometheusRule...) superan el límite de tamaño de la
+        # anotación last-applied-configuration de kubectl apply normal — mismo
+        # problema ya visto con los CRDs de ArgoCD, ver log 2026-08-20.
