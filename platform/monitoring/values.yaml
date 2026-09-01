@@ -60,4 +60,10 @@ kube-prometheus-stack:
       server:
         domain: juan-in-one.local
         root_url: "%(protocol)s://%(domain)s/grafana/"
-        serve_from_sub_path: true
+        # false (no true): el Ingress YA quita el prefijo /grafana antes de
+        # reenviar a Grafana (rewrite-target /$2 de arriba), así que Grafana
+        # debe comportarse como si viviera en la raíz. root_url solo se usa
+        # para generar enlaces absolutos correctos hacia fuera. Con "true" (lo
+        # que se puso primero) Grafana espera gestionar el prefijo él mismo
+        # -> nunca lo recibe -> bucle de redirects en /grafana/login.
+        serve_from_sub_path: false
