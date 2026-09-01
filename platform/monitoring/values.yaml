@@ -27,9 +27,37 @@ kube-prometheus-stack:
     persistence:
       enabled: true
       size: 1Gi
-    # A propósito NO se fija admin.password aquí: si se deja vacío, el propio
-    # chart genera un Secret con una contraseña aleatoria en el primer
-    # arranque -> cero secretos en texto plano en git, mismo principio que ya
-    # aplicasteis con Vault/ESO para postgres. Se recupera con:
-    #   kubectl get secret monitoring-grafana -n monitoring \
+
+    # Contraseña real gestionada en Vault, traída por External Secrets
+    # Operator (ver platform/secrets/externalsecret-grafana.yaml) — mismo
+    # patrón que postgres/car-api. Recuperarla con:
+    #   kubectl get secret grafana-admin-credentials -n monitoring \
     #     -o jsonpath='{.data.admin-password}' | base64 -d
+    admin:
+      existingSecret: grafana-admin-credentials
+      userKey: admin-user
+      passwordKey: admin-password
+
+    # Un único host para toda la plataforma, mismo patrón que web/car-api/
+    # sport-api (ver gitops/apps/car-api.yaml): el prefijo /grafana solo
+    # existe a nivel de Ingress, ingress-nginx fusiona esta regla con las de
+    # los demás porque comparten host.
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      path: "/grafana(/|$)(.*)"
+      pathType: ImplementationSpecific
+      hosts:
+        - juan-in-one.local
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+
+    # A diferencia de car-api/sport-api (APIs sin enlaces propios), Grafana sí
+    # genera enlaces/assets asumiendo dónde vive — sin esto, tras el rewrite
+    # de arriba, pediría sus JS/CSS en "/" en vez de "/grafana/" y la UI se
+    # rompería.
+    "grafana.ini":
+      server:
+        domain: juan-in-one.local
+        root_url: "%(protocol)s://%(domain)s/grafana/"
+        serve_from_sub_path: true
