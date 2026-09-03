@@ -19,7 +19,7 @@ spec:
           # Tag inmutable del commit publicado — con "latest" (el valor por
           # defecto del chart) Kubernetes no detecta que hay imagen nueva y
           # no la redespliega. Ver gitops/apps/web.yaml y log.md 2026-08-27.
-          tag: sha-f9fe163
+          tag: sha-3e4f120
         ingress:
           enabled: true
           # Un único host para toda la plataforma (web + APIs), servido por
