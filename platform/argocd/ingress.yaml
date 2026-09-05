@@ -1,9 +1,9 @@
-# Mismo host compartido que car-api/sport-api/web/grafana, pero SIN
-# rewrite-target: a diferencia de Grafana (que no sabe nada de su prefijo y
-# necesita que el Ingress se lo quite), ArgoCD sí sabe gestionar su propio
-# prefijo internamente (server.rootpath=/argocd, ver configmap-cmd-params.yaml)
-# y espera recibir la ruta completa "/argocd/..." tal cual — si el Ingress se
-# la reescribe/quita, ArgoCD no encuentra la ruta y responde 404.
+# A diferencia de web/car-api/sport-api/grafana (que comparten el host
+# juan-in-one.local por prefijo), ArgoCD tiene su propio subdominio y sirve
+# en la raíz "/". Se probó primero con prefijo (/argocd en el host
+# compartido) y se descartó: la UI de ArgoCD no aplicaba bien basehref/
+# rootpath y cargaba rota (ver log.md 2026-09-05) — un subdominio propio
+# sirviendo en "/" evita el problema de raíz, sin necesitar esos ajustes.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -17,10 +17,10 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: juan-in-one.local
+    - host: argocd.juan-in-one.local
       http:
         paths:
-          - path: /argocd
+          - path: /
             pathType: Prefix
             backend:
               service:

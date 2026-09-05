@@ -4,14 +4,12 @@
 # pueda vigilar nada). A partir de aquí, esta ConfigMap concreta sí vive en
 # Git como el resto de la plataforma.
 #
-# Dos claves, las dos necesarias para servir la UI de ArgoCD bajo /argocd en
-# el mismo Ingress compartido que ya usan web/car-api/sport-api/grafana:
-# - server.insecure: por defecto ArgoCD sirve HTTPS con un certificado
-#   autofirmado; el Ingress le reenvía tráfico HTTP plano (sin TLS, como al
-#   resto), así que hay que decirle a ArgoCD que sirva HTTP también.
-# - server.basehref / server.rootpath: sin esto, la UI genera sus enlaces y
-#   assets asumiendo que vive en "/" — mismo tipo de problema que ya se
-#   resolvió con "root_url" en Grafana (ver platform/monitoring/values.yaml).
+# Solo hace falta "insecure": ArgoCD tiene su propio subdominio
+# (argocd.juan-in-one.local, ver platform/argocd/ingress.yaml), sirviendo en
+# la raíz "/" — no necesita basehref/rootpath (eso era para servirlo bajo un
+# prefijo tipo /argocd en el host compartido, se probó y se descartó: la UI
+# de ArgoCD no aplicaba bien esos ajustes y cargaba rota, ver log.md
+# 2026-09-05).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -22,5 +20,3 @@ metadata:
     app.kubernetes.io/part-of: argocd
 data:
   server.insecure: "true"
-  server.basehref: "/argocd"
-  server.rootpath: "/argocd"
