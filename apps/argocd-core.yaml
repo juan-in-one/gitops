@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-core
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/gitops.git
+    targetRevision: main
+    path: platform/argocd # sin chart de Helm: aplica el YAML tal cual
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

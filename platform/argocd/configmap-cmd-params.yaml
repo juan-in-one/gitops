@@ -1,0 +1,26 @@
+# Primera vez que se gestiona algo del propio ArgoCD vía GitOps (el resto
+# de esta instalación se hizo a mano el 2026-08-20, "bootstrap" inicial e
+# inevitable de cualquier GitOps: algo tiene que existir antes de que ArgoCD
+# pueda vigilar nada). A partir de aquí, esta ConfigMap concreta sí vive en
+# Git como el resto de la plataforma.
+#
+# Dos claves, las dos necesarias para servir la UI de ArgoCD bajo /argocd en
+# el mismo Ingress compartido que ya usan web/car-api/sport-api/grafana:
+# - server.insecure: por defecto ArgoCD sirve HTTPS con un certificado
+#   autofirmado; el Ingress le reenvía tráfico HTTP plano (sin TLS, como al
+#   resto), así que hay que decirle a ArgoCD que sirva HTTP también.
+# - server.basehref / server.rootpath: sin esto, la UI genera sus enlaces y
+#   assets asumiendo que vive en "/" — mismo tipo de problema que ya se
+#   resolvió con "root_url" en Grafana (ver platform/monitoring/values.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cmd-params-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  server.insecure: "true"
+  server.basehref: "/argocd"
+  server.rootpath: "/argocd"

@@ -1,0 +1,27 @@
+# Mismo patrón que car-api/sport-api/web/grafana: un único host compartido
+# (juan-in-one.local), prefijo propio a nivel de Ingress, ingress-nginx
+# fusiona esta regla con las demás.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server
+  namespace: argocd
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # ArgoCD habla gRPC-Web además de HTTP normal desde el navegador; este
+    # backend-protocol le dice a ingress-nginx que no intente forzar HTTP/2
+    # ni nada especial, tráfico HTTP normal basta con server.insecure=true.
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: juan-in-one.local
+      http:
+        paths:
+          - path: /argocd(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
