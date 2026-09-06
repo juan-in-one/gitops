@@ -51,6 +51,16 @@ loki:
   gateway:
     enabled: false
 
+  # Los valores por defecto del chart están pensados para producción real:
+  # chunksCache pedía 8Gi de memoria (!) y resultsCache 1Gi — el Pod de
+  # chunks-cache se quedó en Pending ("Insufficient memory") con esos
+  # valores en un nodo de portátil. Bajados a un tamaño de caché razonable
+  # para el volumen de logs de un clúster de aprendizaje.
+  chunksCache:
+    allocatedMemory: 256
+  resultsCache:
+    allocatedMemory: 256
+
   # Pruebas propias del chart (helm test) y el "canary" sintético de logs —
   # opcionales, se dejan fuera en esta primera pasada para no añadir Pods de
   # más; se puede activar el canary más adelante si se quiere verificar la
