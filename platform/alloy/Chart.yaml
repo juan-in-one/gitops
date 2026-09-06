@@ -1,0 +1,13 @@
+apiVersion: v2
+name: alloy
+description: >
+  Observabilidad de la plataforma juan-in-one — Fase C: Alloy (agente que lee
+  los logs de todos los Pods y los empuja a Loki, sucesor de Promtail/Grafana
+  Agent) vía el chart oficial de Grafana Labs. Wrapper como
+  postgres/vault/monitoring/loki, en vez de instalar el chart suelto a mano.
+type: application
+version: 0.1.0
+dependencies:
+  - name: alloy
+    version: "1.12.1" # empaqueta Alloy v1.19.2
+    repository: https://grafana.github.io/helm-charts
