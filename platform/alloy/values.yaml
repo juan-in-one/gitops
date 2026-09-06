@@ -1,62 +1,73 @@
 # Valores para el chart oficial (dependencia "alloy" declarada en Chart.yaml
-# — todo va anidado bajo la clave "alloy:" de más abajo, mismo patrón que
+# — de ahí la primera clave "alloy:" de más abajo, mismo patrón que
 # "kube-prometheus-stack:"/"loki:" en los otros wrappers de platform/).
+#
+# OJO: hace falta un SEGUNDO nivel de "alloy:" anidado (alloy.alloy.*, no solo
+# alloy.*) — el propio chart de Alloy namespacea igual sus valores bajo su
+# propia clave interna "alloy:" (se ve en templates/configmap.yaml:
+# "$values := .Values.alloy"), lo mismo que hace Loki con su "loki:" interno.
+# Sin este segundo nivel, la plantilla no encuentra nuestro "configMap.content"
+# y cae al ejemplo de fábrica (config/example.alloy) sin avisar de nada — se
+# detectó comparando el ConfigMap ya aplicado en el clúster contra un "helm
+# template" con cero overrides: eran idénticos.
+#
 # Namespace "monitoring", igual que Prometheus/Grafana/Loki.
 alloy:
-  # controller.type ya viene en "daemonset" por defecto en el chart — una
-  # copia del agente por nodo, para que cada uno recolecte los logs de los
-  # Pods que corren en él. Aquí solo hay un nodo (OrbStack), pero es el
-  # patrón real de un clúster de producción con varios.
+  alloy:
+    # controller.type ya viene en "daemonset" por defecto en el chart — una
+    # copia del agente por nodo, para que cada uno recolecte los logs de los
+    # Pods que corren en él. Aquí solo hay un nodo (OrbStack), pero es el
+    # patrón real de un clúster de producción con varios.
 
-  # Configuración de Alloy en su propio lenguaje ("Alloy configuration",
-  # sintaxis River) — el equivalente aquí a un pipeline: descubre los Pods
-  # del clúster, les añade etiquetas útiles (namespace/pod/contenedor/nodo) y
-  # empuja sus logs a Loki. Validado en local con "alloy validate" (el propio
-  # binario, vía Docker) antes de publicar, sin depender del clúster para
-  # comprobar que la sintaxis es correcta.
-  configMap:
-    content: |-
-      // Descubre todos los Pods del clúster vía la API de Kubernetes (no
-      // hace falta montar /var/log del nodo: loki.source.kubernetes de más
-      // abajo lee los logs directamente de la API, igual que "kubectl logs").
-      discovery.kubernetes "pods" {
-        role = "pod"
-      }
+    # Configuración de Alloy en su propio lenguaje ("Alloy configuration",
+    # sintaxis River) — el equivalente aquí a un pipeline: descubre los Pods
+    # del clúster, les añade etiquetas útiles (namespace/pod/contenedor/nodo)
+    # y empuja sus logs a Loki. Validado en local con "alloy validate" (el
+    # propio binario, vía Docker) antes de publicar, sin depender del clúster
+    # para comprobar que la sintaxis es correcta.
+    configMap:
+      content: |-
+        // Descubre todos los Pods del clúster vía la API de Kubernetes (no
+        // hace falta montar /var/log del nodo: loki.source.kubernetes de más
+        // abajo lee los logs directamente de la API, igual que "kubectl logs").
+        discovery.kubernetes "pods" {
+          role = "pod"
+        }
 
-      // Añade como etiquetas de cada log de dónde viene exactamente, para
-      // poder filtrar luego en Grafana (ej. {namespace="car-api"}).
-      discovery.relabel "pod_logs" {
-        targets = discovery.kubernetes.pods.targets
+        // Añade como etiquetas de cada log de dónde viene exactamente, para
+        // poder filtrar luego en Grafana (ej. {namespace="car-api"}).
+        discovery.relabel "pod_logs" {
+          targets = discovery.kubernetes.pods.targets
 
-        rule {
-          source_labels = ["__meta_kubernetes_namespace"]
-          target_label  = "namespace"
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_node_name"]
+            target_label  = "node"
+          }
         }
-        rule {
-          source_labels = ["__meta_kubernetes_pod_name"]
-          target_label  = "pod"
-        }
-        rule {
-          source_labels = ["__meta_kubernetes_pod_container_name"]
-          target_label  = "container"
-        }
-        rule {
-          source_labels = ["__meta_kubernetes_pod_node_name"]
-          target_label  = "node"
-        }
-      }
 
-      // Lee los logs de cada Pod ya etiquetado y los manda al siguiente
-      // componente (loki.write).
-      loki.source.kubernetes "pods" {
-        targets    = discovery.relabel.pod_logs.output
-        forward_to = [loki.write.default.receiver]
-      }
-
-      // Empuja los logs a Loki (mismo Service que ya desplegamos en
-      // platform/loki/, sin gateway delante, puerto 3100).
-      loki.write "default" {
-        endpoint {
-          url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+        // Lee los logs de cada Pod ya etiquetado y los manda al siguiente
+        // componente (loki.write).
+        loki.source.kubernetes "pods" {
+          targets    = discovery.relabel.pod_logs.output
+          forward_to = [loki.write.default.receiver]
         }
-      }
+
+        // Empuja los logs a Loki (mismo Service que ya desplegamos en
+        // platform/loki/, sin gateway delante, puerto 3100).
+        loki.write "default" {
+          endpoint {
+            url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+          }
+        }
