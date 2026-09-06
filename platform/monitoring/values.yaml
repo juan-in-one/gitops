@@ -67,3 +67,13 @@ kube-prometheus-stack:
         # que se puso primero) Grafana espera gestionar el prefijo él mismo
         # -> nunca lo recibe -> bucle de redirects en /grafana/login.
         serve_from_sub_path: false
+
+    # Loki no viene incluido en kube-prometheus-stack (solo Prometheus, que sí
+    # se provisiona solo) — se añade como fuente de datos extra, mismo Service
+    # que platform/loki/ (sin gateway delante, puerto 3100).
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki.monitoring.svc.cluster.local:3100
+        editable: false
