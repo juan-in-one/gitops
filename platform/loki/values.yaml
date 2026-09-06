@@ -1,0 +1,61 @@
+# Valores para el chart oficial (dependencia "loki" declarada en Chart.yaml
+# — de ahí que todo vaya anidado bajo la clave "loki:" de más abajo, mismo
+# patrón que "kube-prometheus-stack:" en platform/monitoring/values.yaml).
+# Namespace "monitoring", el mismo que Prometheus/Grafana — Loki es parte
+# del mismo stack de observabilidad.
+loki:
+  # Modo "SingleBinary": todo Loki en un solo Pod, el modo simple recomendado
+  # para un clúster de un solo nodo (frente a "SimpleScalable"/"Distributed",
+  # pensados para repartir la carga entre varios nodos en un clúster real).
+  deploymentMode: SingleBinary
+
+  loki:
+    # Un solo "tenant" (nosotros) — auth_enabled=true (el valor por defecto
+    # del chart) exige mandar una cabecera X-Scope-OrgID en cada petición,
+    # pensado para multi-tenant. Innecesario en un clúster de un usuario.
+    auth_enabled: false
+
+    storage:
+      # Nada de S3/GCS/Azure (el valor por defecto del chart es "s3"): un
+      # volumen local del propio clúster, mismo criterio que Postgres/
+      # Prometheus — no hay object storage real que practicar aquí.
+      type: filesystem
+
+    # El chart exige un schema_config real para producción; para "jugar" o
+    # aprender, el propio chart documenta este atajo (esquema de prueba ya
+    # preparado, coherente con storage.type=filesystem).
+    useTestSchema: true
+
+    commonConfig:
+      replication_factor: 1 # un solo Pod: no hay nada que replicar
+
+  singleBinary:
+    replicas: 1
+    persistence:
+      size: 5Gi # mismo criterio que Prometheus: suficiente para practicar sin llenar el disco
+
+  # Los tres roles de "SimpleScalable" (write/read/backend) hay que ponerlos
+  # a 0 explícitamente al usar SingleBinary — si no, el chart falla al
+  # renderizar ("more than zero replicas configured for both single binary
+  # and simple scalable targets"), verificado en local con "helm template"
+  # antes de tocar el clúster.
+  write:
+    replicas: 0
+  read:
+    replicas: 0
+  backend:
+    replicas: 0
+
+  # Sin nginx delante: hablamos directo con el Service "loki" (puerto 3100),
+  # un salto menos para un clúster de aprendizaje de un solo tenant.
+  gateway:
+    enabled: false
+
+  # Pruebas propias del chart (helm test) y el "canary" sintético de logs —
+  # opcionales, se dejan fuera en esta primera pasada para no añadir Pods de
+  # más; se puede activar el canary más adelante si se quiere verificar la
+  # entrega de logs de forma continua.
+  test:
+    enabled: false
+  lokiCanary:
+    enabled: false
