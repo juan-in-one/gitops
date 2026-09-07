@@ -12,11 +12,12 @@
         "name": "service",
         "type": "custom",
         "label": "Servicio",
-        "query": "car-api,sport-api",
+        "query": "car-api,sport-api,academy-api",
         "current": { "text": "car-api", "value": "car-api" },
         "options": [
           { "text": "car-api", "value": "car-api", "selected": true },
-          { "text": "sport-api", "value": "sport-api", "selected": false }
+          { "text": "sport-api", "value": "sport-api", "selected": false },
+          { "text": "academy-api", "value": "academy-api", "selected": false }
         ],
         "multi": false,
         "includeAll": false
@@ -108,13 +109,13 @@
     { "type": "row", "title": "Negocio", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }, "panels": [] },
     {
       "type": "stat",
-      "title": "Eventos/retos creados (total)",
-      "description": "car_maintenance_events_created_total en car-api, sport_challenges_created_total en sport-api — una sola consulta vale para las dos gracias al filtro por __name__.",
+      "title": "Eventos/retos/check-ins creados (total)",
+      "description": "car_maintenance_events_created_total en car-api, sport_challenges_created_total en sport-api, academy_goal_check_ins_total en academy-api — una sola consulta vale para las tres gracias al filtro por __name__.",
       "datasource": "Prometheus",
       "gridPos": { "h": 6, "w": 24, "x": 0, "y": 19 },
       "targets": [
         {
-          "expr": "sum({__name__=~\"car_maintenance_events_created_total|sport_challenges_created_total\", job=\"$service\"})"
+          "expr": "sum({__name__=~\"car_maintenance_events_created_total|sport_challenges_created_total|academy_goal_check_ins_total\", job=\"$service\"})"
         }
       ]
     },
