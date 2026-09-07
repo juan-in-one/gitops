@@ -68,12 +68,34 @@ kube-prometheus-stack:
         # -> nunca lo recibe -> bucle de redirects en /grafana/login.
         serve_from_sub_path: false
 
-    # Loki no viene incluido en kube-prometheus-stack (solo Prometheus, que sí
-    # se provisiona solo) — se añade como fuente de datos extra, mismo Service
-    # que platform/loki/ (sin gateway delante, puerto 3100).
+    # Loki y Tempo no vienen incluidos en kube-prometheus-stack (solo
+    # Prometheus, que sí se provisiona solo) — se añaden como fuentes de
+    # datos extra. "uid" fijo en los dos (en vez del generado al azar por
+    # defecto) porque Tempo necesita referenciar a Loki por su uid exacto
+    # para la correlación traza → logs de más abajo.
     additionalDataSources:
       - name: Loki
+        uid: loki
         type: loki
         access: proxy
         url: http://loki.monitoring.svc.cluster.local:3100
         editable: false
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.monitoring.svc.cluster.local:3200
+        editable: false
+        jsonData:
+          # Fase D: desde una traza en Tempo, poder saltar directo a los
+          # logs de esa misma petición en Loki. "tags" dice cómo traducir un
+          # atributo de la traza (service.name, ej. "car-api") a una
+          # etiqueta de Loki (namespace) — mismo valor en los dos casos
+          # porque así se llamó cada namespace, no hace falta más mapeo.
+          tracesToLogsV2:
+            datasourceUid: loki
+            tags:
+              - key: service.name
+                value: namespace
+            filterByTraceID: false
+            filterBySpanID: false
