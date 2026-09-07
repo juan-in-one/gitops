@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: academy-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/academy-api.git
+    targetRevision: main
+    path: chart
+    helm:
+      releaseName: academy-api
+      # El Secret "academy-api" (con DATABASE_URL) lo crea External Secrets
+      # Operator desde Vault, ver platform/secrets/externalsecret-academy-api.yaml.
+      valuesObject:
+        image:
+          # Tag inmutable del commit publicado — ver car-api.yaml/log.md
+          # 2026-08-27 para el motivo (con "latest" Kubernetes no redespliega).
+          tag: sha-72edf1f
+        ingress:
+          enabled: true
+          host: juan-in-one.local
+          path: "/api/academy-api(/|$)(.*)"
+          pathType: ImplementationSpecific
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /$2
+        imagePullSecrets:
+          # Secret dockerconfigjson creado directo en el clúster (no en Git,
+          # namespace academy-api) con credenciales de lectura del paquete
+          # privado de GHCR: kubectl create secret docker-registry ghcr-pull...
+          - name: ghcr-pull
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: academy-api
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
