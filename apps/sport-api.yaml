@@ -18,7 +18,7 @@ spec:
           # Tag inmutable del commit publicado — con "latest" (el valor por
           # defecto del chart) Kubernetes no detecta que hay imagen nueva y
           # no la redespliega. Ver gitops/apps/web.yaml y log.md 2026-08-27.
-          tag: sha-d40add3
+          tag: sha-d7cc93f
         ingress:
           enabled: true
           # Mismo host que car-api/web — ingress-nginx fusiona las reglas de
