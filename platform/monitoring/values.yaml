@@ -68,11 +68,23 @@ kube-prometheus-stack:
         # -> nunca lo recibe -> bucle de redirects en /grafana/login.
         serve_from_sub_path: false
 
+    # "Loki" ya existía (Fase C) con un uid generado al azar por Grafana —
+    # declarar ahora "uid: loki" en additionalDataSources no lo cambia
+    # retroactivamente (Grafana no reescribe el uid de algo que ya existe),
+    # así que Tempo no podría encontrarlo por ese nombre más abajo. Se borra
+    # y se vuelve a crear desde cero (sin perder nada: es solo el registro de
+    # conexión en Grafana, no datos de Loki) para que nazca ya con el uid
+    # fijo que necesitamos — visto comparando los logs de Grafana
+    # ("Datasource provisioning error: data source not found") contra
+    # GET /api/datasources, que mostró el uid real (P8E80F9AEF21F6940).
+    deleteDatasources:
+      - name: Loki
+        orgId: 1
+
     # Loki y Tempo no vienen incluidos en kube-prometheus-stack (solo
     # Prometheus, que sí se provisiona solo) — se añaden como fuentes de
-    # datos extra. "uid" fijo en los dos (en vez del generado al azar por
-    # defecto) porque Tempo necesita referenciar a Loki por su uid exacto
-    # para la correlación traza → logs de más abajo.
+    # datos extra. "uid" fijo en los dos porque Tempo necesita referenciar a
+    # Loki por su uid exacto para la correlación traza → logs de más abajo.
     additionalDataSources:
       - name: Loki
         uid: loki
