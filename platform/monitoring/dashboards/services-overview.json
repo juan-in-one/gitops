@@ -134,6 +134,22 @@
       "targets": [
         { "expr": "{namespace=\"$service\"}" }
       ]
+    },
+
+    { "type": "row", "title": "Trazas", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 }, "panels": [] },
+    {
+      "type": "table",
+      "title": "Trazas recientes",
+      "description": "Búsqueda TraceQL — clic en el ID de traza para abrir el árbol completo de spans. El rango de tiempo lo pone el propio dashboard (arriba a la derecha), igual que en los paneles de Prometheus/Loki.",
+      "datasource": "Tempo",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 37 },
+      "targets": [
+        {
+          "queryType": "traceql",
+          "query": "{resource.service.name=\"$service\"}",
+          "limit": 20
+        }
+      ]
     }
   ]
 }
