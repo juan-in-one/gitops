@@ -14,6 +14,18 @@
 # Namespace "monitoring", igual que Prometheus/Grafana/Loki.
 alloy:
   alloy:
+    # Puertos OTLP para recibir trazas — el Service "alloy" (puerto 4317/4318)
+    # es a donde car-api/sport-api mandarán sus trazas más adelante.
+    extraPorts:
+      - name: otlp-grpc
+        port: 4317
+        targetPort: 4317
+        protocol: TCP
+      - name: otlp-http
+        port: 4318
+        targetPort: 4318
+        protocol: TCP
+
     # controller.type ya viene en "daemonset" por defecto en el chart — una
     # copia del agente por nodo, para que cada uno recolecte los logs de los
     # Pods que corren en él. Aquí solo hay un nodo (OrbStack), pero es el
@@ -69,5 +81,34 @@ alloy:
         loki.write "default" {
           endpoint {
             url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+          }
+        }
+
+        // Fase D: recibe trazas OTLP de car-api/sport-api (puertos estándar
+        // 4317 grpc / 4318 http, expuestos vía alloy.service.extraPorts más
+        // abajo) y las reenvía a Tempo. Nada de descubrimiento aquí — a
+        // diferencia de los logs, las trazas las mandan las apps por su
+        // cuenta (push), Alloy solo hace de intermediario.
+        otelcol.receiver.otlp "default" {
+          grpc {
+            endpoint = "0.0.0.0:4317"
+          }
+          http {
+            endpoint = "0.0.0.0:4318"
+          }
+
+          output {
+            traces = [otelcol.exporter.otlp.tempo.input]
+          }
+        }
+
+        otelcol.exporter.otlp "tempo" {
+          client {
+            endpoint = "tempo.monitoring.svc.cluster.local:4317"
+            tls {
+              // Tráfico interno del clúster, sin certificado — mismo
+              // criterio que loki.write de arriba (sin TLS hacia Loki).
+              insecure = true
+            }
           }
         }
