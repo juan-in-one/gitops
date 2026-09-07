@@ -1,0 +1,139 @@
+{
+  "title": "Servicios — RED + negocio",
+  "uid": "services-overview",
+  "tags": ["juan-in-one"],
+  "timezone": "browser",
+  "editable": true,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "custom",
+        "label": "Servicio",
+        "query": "car-api,sport-api",
+        "current": { "text": "car-api", "value": "car-api" },
+        "options": [
+          { "text": "car-api", "value": "car-api", "selected": true },
+          { "text": "sport-api", "value": "sport-api", "selected": false }
+        ],
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
+  "panels": [
+    { "type": "row", "title": "Salud", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "panels": [] },
+    {
+      "type": "timeseries",
+      "title": "Reinicios de Pods",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "kube_pod_container_status_restarts_total{namespace=\"$service\"}",
+          "legendFormat": "{{pod}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Réplicas: deseadas vs disponibles",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "kube_deployment_spec_replicas{namespace=\"$service\", deployment=\"$service\"}",
+          "legendFormat": "Deseadas"
+        },
+        {
+          "expr": "kube_deployment_status_replicas_available{namespace=\"$service\", deployment=\"$service\"}",
+          "legendFormat": "Disponibles"
+        }
+      ]
+    },
+
+    { "type": "row", "title": "Tráfico (RED: Rate, Errors, Duration)", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }, "panels": [] },
+    {
+      "type": "timeseries",
+      "title": "Peticiones por segundo",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_duration_milliseconds_count{job=\"$service\"}[5m]))",
+          "legendFormat": "req/s"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "% de errores (4xx/5xx)",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "#EAB839", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(http_server_duration_milliseconds_count{job=\"$service\", http_status_code=~\"4..|5..\"}[5m])) / sum(rate(http_server_duration_milliseconds_count{job=\"$service\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Latencia p95",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job=\"$service\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+
+    { "type": "row", "title": "Negocio", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }, "panels": [] },
+    {
+      "type": "stat",
+      "title": "Eventos/retos creados (total)",
+      "description": "car_maintenance_events_created_total en car-api, sport_challenges_created_total en sport-api — una sola consulta vale para las dos gracias al filtro por __name__.",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 19 },
+      "targets": [
+        {
+          "expr": "sum({__name__=~\"car_maintenance_events_created_total|sport_challenges_created_total\", job=\"$service\"})"
+        }
+      ]
+    },
+
+    { "type": "row", "title": "Logs", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 }, "panels": [] },
+    {
+      "type": "logs",
+      "title": "Logs en vivo",
+      "datasource": "Loki",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 26 },
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none",
+        "enableLogDetails": true
+      },
+      "targets": [
+        { "expr": "{namespace=\"$service\"}" }
+      ]
+    }
+  ]
+}

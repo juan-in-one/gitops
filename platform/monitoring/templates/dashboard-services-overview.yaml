@@ -1,0 +1,15 @@
+# Dashboard "as code": el sidecar de Grafana (kube-prometheus-stack.grafana.
+# sidecar.dashboards, activado por defecto) vigila las ConfigMap con la
+# etiqueta "grafana_dashboard" en este namespace y las carga solas — sin
+# tocar nada a mano en la UI, sobrevive a que se borre el Pod de Grafana.
+# El JSON vive en dashboards/services-overview.json (no en este archivo)
+# para poder editarlo como JSON normal, sin pelearse con la indentación YAML.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-services-overview
+  labels:
+    grafana_dashboard: "1"
+data:
+  services-overview.json: |
+{{ .Files.Get "dashboards/services-overview.json" | indent 4 }}
