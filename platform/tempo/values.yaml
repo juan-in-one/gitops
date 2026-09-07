@@ -1,0 +1,25 @@
+# Valores para el chart oficial (dependencia "tempo" declarada en Chart.yaml
+# — de ahí la primera clave "tempo:" de más abajo).
+#
+# OJO, misma lección aprendida con Loki/Alloy: el propio chart namespacea
+# ALGUNAS de sus claves bajo su propia clave interna "tempo:" (storage,
+# retention, receivers...), así que esas van con doble anidado
+# (tempo.tempo.*). Otras (persistence, service...) son de nivel superior
+# dentro del chart y solo llevan un anidado (tempo.*). Verificado con
+# "helm template" en local antes de publicar, comparando contra un render
+# sin overrides — no repetir el fallo silencioso de Alloy.
+tempo:
+  # Ya viene en modo single-binary por defecto (el chart se llama incluso
+  # "Grafana Tempo Single Binary Mode") — nada que elegir aquí, a diferencia
+  # de Loki, que sí tenía varios modos.
+
+  persistence:
+    enabled: true # por defecto es "false" (datos efímeros, se pierden al reiniciar el Pod)
+    size: 5Gi # mismo criterio que Prometheus/Loki
+
+  tempo:
+    # Backend "local" (disco del propio Pod) ya viene por defecto — nada de
+    # S3/GCS, igual que Loki. El receptor OTLP (donde Alloy va a mandar las
+    # trazas) también viene activado de fábrica en los puertos estándar
+    # 4317 (grpc) / 4318 (http) — no hace falta declarar nada de eso aquí.
+    retention: 24h # las trazas pesan más que los logs; suficiente para practicar sin llenar el disco
