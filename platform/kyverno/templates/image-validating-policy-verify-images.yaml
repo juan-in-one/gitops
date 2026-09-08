@@ -8,9 +8,11 @@
 # correctamente — confirmado con un PolicyReport real en "pass" para la
 # imagen firmada de car-api.
 #
-# validationActions: Audit a propósito (no Enforce todavía): registra en un
-# PolicyReport qué bloquearía sin bloquear nada real, para verificarlo con
-# tráfico real del clúster antes de que pueda tumbar un despliegue.
+# validationActions: Enforce (2026-09-08) — antes estuvo en Audit mientras
+# se verificaba con datos reales del clúster que las imágenes firmadas se
+# reportaban bien (confirmado: pass/success en las 4 apps reales, tras
+# redesplegar sus imágenes ya firmadas). A partir de aquí, un Pod cuya
+# imagen no esté firmada por el CI de juan-in-one no se admite.
 #
 # validationConfigurations: por defecto este motor SÍ tiene efectos
 # colaterales que la ClusterPolicy legacy no tenía — mutateDigest:true
@@ -24,7 +26,7 @@ kind: ImageValidatingPolicy
 metadata:
   name: verify-image-signatures-cel
 spec:
-  validationActions: [Audit]
+  validationActions: [Enforce]
   validationConfigurations:
     mutateDigest: false
     verifyDigest: false
