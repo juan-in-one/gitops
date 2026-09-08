@@ -27,3 +27,14 @@ spec:
       # at most 262144 bytes". ServerSideApply es la solución recomendada
       # por el propio proyecto Kyverno para instalarse vía ArgoCD.
       - ServerSideApply=true
+  # Falso positivo conocido: el API server añade "spec.conversion:
+  # {strategy: None}" a cualquier CRD que no lo declare, así que el objeto
+  # "vivo" siempre tiene ese campo aunque el manifiesto deseado no lo
+  # mencione — ArgoCD lo marcaba como OutOfSync permanente en las 22 CRDs de
+  # Kyverno sin que hubiera ninguna diferencia real (verificado comparando
+  # live vs. "helm template" campo a campo).
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jsonPointers:
+        - /spec/conversion
