@@ -8,11 +8,14 @@
 # correctamente — confirmado con un PolicyReport real en "pass" para la
 # imagen firmada de car-api.
 #
-# validationActions: Enforce (2026-09-08) — antes estuvo en Audit mientras
-# se verificaba con datos reales del clúster que las imágenes firmadas se
+# validationActions: Deny (2026-09-08) — antes estuvo en Audit mientras se
+# verificaba con datos reales del clúster que las imágenes firmadas se
 # reportaban bien (confirmado: pass/success en las 4 apps reales, tras
 # redesplegar sus imágenes ya firmadas). A partir de aquí, un Pod cuya
-# imagen no esté firmada por el CI de juan-in-one no se admite.
+# imagen no esté firmada por el CI de juan-in-one no se admite. Este CRD no
+# usa la terminología "Enforce" de la ClusterPolicy legacy — los valores
+# válidos aquí son Deny/Audit/Warn (confirmado tras un primer intento
+# fallido con "Enforce", rechazado por el propio API server).
 #
 # validationConfigurations: por defecto este motor SÍ tiene efectos
 # colaterales que la ClusterPolicy legacy no tenía — mutateDigest:true
@@ -26,7 +29,7 @@ kind: ImageValidatingPolicy
 metadata:
   name: verify-image-signatures-cel
 spec:
-  validationActions: [Enforce]
+  validationActions: [Deny]
   validationConfigurations:
     mutateDigest: false
     verifyDigest: false
