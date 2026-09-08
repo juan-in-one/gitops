@@ -1,16 +1,33 @@
-# EXPERIMENTO: la ClusterPolicy (kyverno.io/v1, cluster-policy-verify-
-# images.yaml) tiene un fallo real conocido — su verificador de Cosign
-# interno no encuentra firmas que sí existen y sí son válidas (comprobado a
-# mano con "cosign verify" y "crane ls" usando las mismas credenciales).
-# Kyverno recomienda en sus propios logs migrar a este motor nuevo, basado
-# en CEL — se prueba en paralelo, también en Audit, por si no comparte el
-# mismo fallo. Si funciona, sustituye a la ClusterPolicy; si no, se borra.
+# Verifica la firma de Cosign de cada imagen antes de admitirla — este es
+# el motor que SÍ funciona. La ClusterPolicy legacy (kyverno.io/v1) tenía un
+# fallo real: su verificador de Cosign interno respondía "no signatures
+# found" para imágenes con firma válida y verificable (comprobado a mano
+# con "cosign verify" y "crane ls" usando las mismas credenciales). Este
+# motor nuevo, basado en CEL (policies.kyverno.io, el que Kyverno recomienda
+# en sus propios logs de deprecación), sí encuentra y valida la firma
+# correctamente — confirmado con un PolicyReport real en "pass" para la
+# imagen firmada de car-api.
+#
+# validationActions: Audit a propósito (no Enforce todavía): registra en un
+# PolicyReport qué bloquearía sin bloquear nada real, para verificarlo con
+# tráfico real del clúster antes de que pueda tumbar un despliegue.
+#
+# validationConfigurations: por defecto este motor SÍ tiene efectos
+# colaterales que la ClusterPolicy legacy no tenía — mutateDigest:true
+# reescribe la imagen del Deployment a su digest resuelto en cuanto pasa
+# por el webhook (esto se detectó en vivo: dejó car-api en OutOfSync sin
+# haber tocado gitops). Se desactiva explícitamente, junto con
+# verifyDigest (exigiría que la imagen ya viniera pineada por digest, y
+# aquí se usan tags a propósito en todo el proyecto).
 apiVersion: policies.kyverno.io/v1
 kind: ImageValidatingPolicy
 metadata:
   name: verify-image-signatures-cel
 spec:
   validationActions: [Audit]
+  validationConfigurations:
+    mutateDigest: false
+    verifyDigest: false
   webhookConfiguration:
     timeoutSeconds: 30
   matchConstraints:
@@ -28,12 +45,16 @@ spec:
     secrets:
       - ghcr-pull
   attestors:
+    # car-api, sport-api y academy-api comparten el mismo workflow
+    # reutilizable (juan-in-one/.github), así que la identidad de la firma
+    # es la del propio workflow reutilizable, no la del ci.yml de cada API.
     - name: apis_python
       cosign:
         keyless:
           identities:
             - subject: "https://github.com/juan-in-one/.github/.github/workflows/fastapi-service-ci.yml@refs/heads/main"
               issuer: "https://token.actions.githubusercontent.com"
+    # web tiene su propio ci.yml (no es un workflow reutilizable), identidad distinta.
     - name: web
       cosign:
         keyless:
