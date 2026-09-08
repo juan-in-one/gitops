@@ -1,0 +1,17 @@
+apiVersion: v2
+name: kyverno
+description: >
+  Admission controller de políticas de Kubernetes — pieza final de la
+  cadena de suministro de la plataforma juan-in-one: verifica que la imagen
+  de cada Pod esté firmada con Cosign (ver el workflow reutilizable
+  fastapi-service-ci.yml en juan-in-one/.github) antes de admitirla. Wrapper
+  como postgres/vault/monitoring/loki/alloy/tempo — chart oficial del
+  proyecto Kyverno, sin overrides de recursos: los valores por defecto ya
+  son ligeros (1 réplica por controlador, <400m CPU / <400Mi de memoria en
+  total) y encajan bien en un clúster de un solo nodo.
+type: application
+version: 0.1.0
+dependencies:
+  - name: kyverno
+    version: "3.9.0" # empaqueta Kyverno v1.19.0
+    repository: https://kyverno.github.io/kyverno/

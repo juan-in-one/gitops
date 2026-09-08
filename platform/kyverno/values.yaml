@@ -1,0 +1,5 @@
+# Sin overrides: a diferencia de Loki/Alloy/Tempo, los valores por defecto
+# del chart oficial ya encajan en un clúster de un solo nodo (1 réplica por
+# controlador, recursos ligeros — verificado con "helm template" antes de
+# desplegar). Este fichero se deja vacío a propósito, no por olvido.
+kyverno: {}

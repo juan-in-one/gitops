@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-kyverno
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/juan-in-one/gitops.git
+    targetRevision: main
+    path: platform/kyverno
+    helm:
+      releaseName: kyverno
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Kyverno declara CRDs muy grandes (ej. ClusterPolicy, con todo su
+      # esquema de validación embebido) — con el "kubectl apply" normal
+      # (client-side, que guarda la configuración completa anterior en una
+      # anotación) esto falla con "metadata.annotations: Too long: must have
+      # at most 262144 bytes". ServerSideApply es la solución recomendada
+      # por el propio proyecto Kyverno para instalarse vía ArgoCD.
+      - ServerSideApply=true
