@@ -1,0 +1,53 @@
+# EXPERIMENTO: la ClusterPolicy (kyverno.io/v1, cluster-policy-verify-
+# images.yaml) tiene un fallo real conocido — su verificador de Cosign
+# interno no encuentra firmas que sí existen y sí son válidas (comprobado a
+# mano con "cosign verify" y "crane ls" usando las mismas credenciales).
+# Kyverno recomienda en sus propios logs migrar a este motor nuevo, basado
+# en CEL — se prueba en paralelo, también en Audit, por si no comparte el
+# mismo fallo. Si funciona, sustituye a la ClusterPolicy; si no, se borra.
+apiVersion: policies.kyverno.io/v1
+kind: ImageValidatingPolicy
+metadata:
+  name: verify-image-signatures-cel
+spec:
+  validationActions: [Audit]
+  webhookConfiguration:
+    timeoutSeconds: 30
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        operations: ["CREATE", "UPDATE"]
+  matchImageReferences:
+    - glob: "ghcr.io/juan-in-one/car-api*"
+    - glob: "ghcr.io/juan-in-one/sport-api*"
+    - glob: "ghcr.io/juan-in-one/academy-api*"
+    - glob: "ghcr.io/juan-in-one/web*"
+  credentials:
+    secrets:
+      - ghcr-pull
+  attestors:
+    - name: apis_python
+      cosign:
+        keyless:
+          identities:
+            - subject: "https://github.com/juan-in-one/.github/.github/workflows/fastapi-service-ci.yml@refs/heads/main"
+              issuer: "https://token.actions.githubusercontent.com"
+          ctlog:
+            url: https://rekor.sigstore.dev
+    - name: web
+      cosign:
+        keyless:
+          identities:
+            - subject: "https://github.com/juan-in-one/web/.github/workflows/ci.yml@refs/heads/main"
+              issuer: "https://token.actions.githubusercontent.com"
+          ctlog:
+            url: https://rekor.sigstore.dev
+  validations:
+    - expression: >-
+        images.containers.map(image,
+          verifyImageSignatures(image, [attestors.apis_python]) > 0 ||
+          verifyImageSignatures(image, [attestors.web]) > 0
+        ).all(e, e)
+      message: "La imagen debe estar firmada por el CI de juan-in-one (Cosign, keyless)."
