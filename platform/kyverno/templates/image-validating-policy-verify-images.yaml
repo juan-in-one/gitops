@@ -34,16 +34,12 @@ spec:
           identities:
             - subject: "https://github.com/juan-in-one/.github/.github/workflows/fastapi-service-ci.yml@refs/heads/main"
               issuer: "https://token.actions.githubusercontent.com"
-          ctlog:
-            url: https://rekor.sigstore.dev
     - name: web
       cosign:
         keyless:
           identities:
             - subject: "https://github.com/juan-in-one/web/.github/workflows/ci.yml@refs/heads/main"
               issuer: "https://token.actions.githubusercontent.com"
-          ctlog:
-            url: https://rekor.sigstore.dev
   validations:
     - expression: >-
         images.containers.map(image,
