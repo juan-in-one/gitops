@@ -56,6 +56,16 @@ spec:
             - "ghcr.io/juan-in-one/academy-api*"
           failureAction: Audit
           mutateDigest: false
+          # RBAC solo no basta: hace falta decirle explícitamente qué
+          # Secret usar para autenticarse en ghcr.io (notación
+          # namespace/nombre) — comprobado en los logs reales del
+          # admission-controller que sin esto sigue dando "UNAUTHORIZED"
+          # aunque el ServiceAccount ya pueda leer el Secret.
+          imageRegistryCredentials:
+            secrets:
+              - car-api/ghcr-pull
+              - sport-api/ghcr-pull
+              - academy-api/ghcr-pull
           attestors:
             - entries:
                 - keyless:
@@ -79,6 +89,9 @@ spec:
             - "ghcr.io/juan-in-one/web*"
           failureAction: Audit
           mutateDigest: false
+          imageRegistryCredentials:
+            secrets:
+              - web/ghcr-pull
           attestors:
             - entries:
                 - keyless:
