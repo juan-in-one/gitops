@@ -17,7 +17,7 @@ spec:
         image:
           # Tag inmutable del commit publicado — ver car-api.yaml/log.md
           # 2026-08-27 para el motivo (con "latest" Kubernetes no redespliega).
-          tag: sha-72edf1f
+          tag: sha-fc45bdf
         ingress:
           enabled: true
           host: juan-in-one.local
