@@ -1,0 +1,91 @@
+# Segunda capa de la cadena de suministro, complementaria a la firma de
+# Cosign (verify-image-signatures-cel): esa política exige firma solo para
+# las imágenes de juan-in-one (las únicas que nuestro CI puede firmar). El
+# resto del clúster (Postgres, ArgoCD, Grafana, Vault...) usa imágenes de
+# terceros que nunca vamos a firmar nosotros — pero eso no significa que
+# valga cualquier imagen de cualquier sitio.
+#
+# Esta política es una lista blanca de orígenes: solo se admite una imagen
+# si viene de uno de los registros/organizaciones que de verdad usamos hoy
+# en el clúster (inventariado con "kubectl get pods -A" antes de escribir
+# esto, no adivinado). Así, aunque alguien hiciera un "kubectl apply" a
+# mano con una imagen de un registro cualquiera (un backdoor publicado en
+# un repo público de Docker Hub o ECR, por ejemplo), se rechaza en el
+# momento — no hace falta que esa imagen esté firmada por nadie en
+# concreto, basta con que NO venga de un origen conocido.
+#
+# kube-system queda fuera a propósito: son los componentes base del propio
+# clúster (CoreDNS, el proveedor de almacenamiento...) gestionados por
+# OrbStack, no por nosotros — meterlos aquí solo añade riesgo de dejar el
+# clúster inarrancable si algo del webhook falla, sin aportar seguridad
+# real (no es superficie que controlemos nosotros).
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-image-registries
+  annotations:
+    policies.kyverno.io/title: Lista blanca de registros de imágenes (juan-in-one)
+    policies.kyverno.io/description: >-
+      Solo admite imágenes de los registros/organizaciones que de verdad se
+      usan hoy en el clúster — bloquea cualquier origen no autorizado,
+      firmado o no.
+spec:
+  # Audit primero a propósito, igual que se hizo con la firma de Cosign:
+  # esta política toca TODO el clúster (menos kube-system) — un error de
+  # sintaxis o una expresión CEL mal escrita aquí podría bloquear ArgoCD,
+  # Vault o el propio Grafana. Se pasa a Deny solo después de confirmar con
+  # un PolicyReport real que todo lo que corre hoy pasa limpio.
+  validationActions: [Audit]
+  webhookConfiguration:
+    timeoutSeconds: 30
+  matchConstraints:
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["kube-system"]
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        operations: ["CREATE", "UPDATE"]
+  variables:
+    - name: allowedPrefixes
+      expression: >-
+        [
+          "ghcr.io/juan-in-one/",
+          "ghcr.io/dexidp/",
+          "ghcr.io/external-secrets/",
+          "docker.io/bitnamilegacy/",
+          "docker.io/grafana/",
+          "docker.io/kiwigrid/",
+          "docker.io/library/",
+          "docker.io/hashicorp/",
+          "docker.io/prom/",
+          "docker.io/rancher/",
+          "hashicorp/",
+          "memcached:",
+          "prom/",
+          "rancher/",
+          "public.ecr.aws/docker/library/",
+          "quay.io/argoproj/",
+          "quay.io/kiwigrid/",
+          "quay.io/prometheus-operator/",
+          "quay.io/prometheus/",
+          "reg.kyverno.io/kyverno/",
+          "registry.k8s.io/"
+        ]
+    - name: allContainers
+      expression: >-
+        object.spec.containers +
+        (has(object.spec.initContainers) ? object.spec.initContainers : [])
+  validations:
+    - expression: >-
+        variables.allContainers.all(c,
+          variables.allowedPrefixes.exists(p, c.image.startsWith(p))
+        )
+      message: >-
+        La imagen no viene de un origen autorizado para este clúster
+        (registros permitidos: ghcr.io/juan-in-one, docker.io/grafana,
+        quay.io/prometheus*, registry.k8s.io, y el resto de terceros ya
+        inventariados en la plataforma).
