@@ -30,12 +30,11 @@ metadata:
       usan hoy en el clúster — bloquea cualquier origen no autorizado,
       firmado o no.
 spec:
-  # Audit primero a propósito, igual que se hizo con la firma de Cosign:
-  # esta política toca TODO el clúster (menos kube-system) — un error de
-  # sintaxis o una expresión CEL mal escrita aquí podría bloquear ArgoCD,
-  # Vault o el propio Grafana. Se pasa a Deny solo después de confirmar con
-  # un PolicyReport real que todo lo que corre hoy pasa limpio.
-  validationActions: [Audit]
+  # Deny (2026-09-09): verificado primero en Audit contra las 11 namespaces
+  # reales del clúster (pass/success en todas) y con una prueba negativa
+  # real (una imagen de docker.io/bitnami, no en la lista, reportada como
+  # "fail" con el mensaje esperado) antes de pasar a bloqueante.
+  validationActions: [Deny]
   webhookConfiguration:
     timeoutSeconds: 30
   matchConstraints:
