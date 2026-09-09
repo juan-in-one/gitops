@@ -58,7 +58,7 @@ spec:
           "docker.io/bitnamilegacy/",
           "docker.io/grafana/",
           "docker.io/kiwigrid/",
-          "docker.io/library/",
+          "docker.io/library/busybox:",
           "docker.io/hashicorp/",
           "docker.io/prom/",
           "docker.io/rancher/",
