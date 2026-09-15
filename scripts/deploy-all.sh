@@ -68,6 +68,24 @@ echo
 echo "════════════════════════════════════════"
 echo " 4/6 — Vault: inicializar, desellar, configurar"
 echo "════════════════════════════════════════"
+# En un clúster recién reseteado, ArgoCD puede seguir programando el pod
+# de vault-0 cuando llegamos aquí ("pod vault-0 does not have a host
+# assigned" al hacer exec). No vale esperar a "condition=ready": un Vault
+# sellado nunca pasa el readiness probe, así que "kubectl wait
+# --for=condition=ready" se quedaría colgado para siempre en un volumen
+# nuevo. Se espera a que la fase sea Running (contenedor arrancado y con
+# nodo asignado), que es lo único que hace falta para poder hacer exec.
+echo "  Esperando a que vault-0 tenga contenedor arrancado..."
+for i in $(seq 1 60); do
+  phase=$(kubectl get pod vault-0 -n vault -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
+  [ "$phase" = "Running" ] && break
+  sleep 2
+done
+if [ "$phase" != "Running" ]; then
+  echo "  vault-0 no llegó a Running a tiempo (fase: $phase). Revisa 'kubectl get pods -n vault'." >&2
+  exit 1
+fi
+
 # "vault status" devuelve exit code 2 cuando está sellado (aunque ya esté
 # inicializado) — con pipefail eso rompía la comprobación de antes y
 # metía el script por la rama equivocada. Aquí no se usa en un pipe ni
