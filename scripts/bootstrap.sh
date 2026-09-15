@@ -47,6 +47,30 @@ echo "== 4/4 — Esperando a que ArgoCD sincronice todo (unos minutos) =="
 sleep 10
 kubectl get applications -n argocd 2>/dev/null || true
 
+# El manifiesto crudo de ArgoCD (paso 2/4) crea argocd-server con la config
+# por defecto (server.insecure=false). La Application "argocd-core" parchea
+# después el ConfigMap argocd-cmd-params-cm a server.insecure=true (para
+# que ingress-nginx pueda hablarle en HTTP sin bucle de redirección a
+# HTTPS) — pero argocd-server solo lee ese ConfigMap al arrancar, no en
+# caliente. Sin este reinicio, la UI queda en un bucle infinito de
+# redirección a HTTPS (comprobado en real: hasta "curl" con -L lo sufre).
+# Se espera a que argocd-core esté Synced antes de reiniciar, para no
+# reiniciar con el ConfigMap todavía sin parchear.
+echo "Esperando a que argocd-core (el ConfigMap de ArgoCD) esté sincronizado..."
+for i in $(seq 1 60); do
+  sync=$(kubectl get application argocd-core -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
+  [ "$sync" = "Synced" ] && break
+  sleep 5
+done
+if [ "$sync" = "Synced" ]; then
+  echo "Reiniciando argocd-server para que recoja server.insecure=true..."
+  kubectl rollout restart deployment/argocd-server -n argocd
+  kubectl rollout status deployment/argocd-server -n argocd --timeout=120s
+else
+  echo "argocd-core no llegó a Synced a tiempo — reinicia argocd-server a mano cuando sincronice:" >&2
+  echo "  kubectl rollout restart deployment/argocd-server -n argocd" >&2
+fi
+
 cat <<'EOF'
 
 ────────────────────────────────────────────────────────────────────
