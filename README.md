@@ -7,13 +7,13 @@ mecanismo de despliegue: nunca hay un `kubectl apply` manual salvo el arranque e
 ## Levantarlo desde cero
 
 ```bash
-bash scripts/bootstrap.sh
+bash scripts/deploy-all.sh
 ```
 
-Automatiza lo que es automatizable (Kubernetes en OrbStack, ArgoCD, el app-of-apps) y te deja una lista
-clara de lo que no lo es (secretos reales) — ver [`docs/BOOTSTRAP.md`](docs/BOOTSTRAP.md) para el detalle
-paso a paso. `scripts/teardown.sh` hace lo contrario, para cuando quieras liberar recursos sin perder nada
-del repo.
+Lo despliega todo, de verdad — probado dos veces seguidas contra un clúster recién reseteado con
+`orbctl reset`. `scripts/bootstrap.sh` es la versión más pequeña (solo la parte 100% GitOps, sin tocar
+secretos); ver [`docs/BOOTSTRAP.md`](docs/BOOTSTRAP.md) para el detalle paso a paso de cada pieza.
+`scripts/teardown.sh` apaga Kubernetes en OrbStack de forma reversible.
 
 ## Patrón: App of Apps
 
