@@ -28,7 +28,12 @@ echo "Nodo listo."
 echo
 echo "== 2/4 — Instalar ArgoCD (si no está ya) =="
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# --server-side: el CRD de ApplicationSet es demasiado grande para el apply
+# de cliente normal (desborda el límite de 262144 bytes de la anotación
+# donde guarda la configuración anterior) — mismo problema que ya tuvimos
+# con los CRDs de Kyverno, comprobado en real al ejecutar este script
+# contra un clúster limpio.
+kubectl apply --server-side -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 echo "Esperando a que argocd-server esté listo (puede tardar un minuto)..."
 kubectl wait --for=condition=available --timeout=180s deployment/argocd-server -n argocd
