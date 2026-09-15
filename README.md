@@ -4,6 +4,17 @@ La fuente de verdad del clúster de [juan-in-one](https://github.com/juan-in-one
 microservicios propios y plataforma compartida— está declarado aquí. Un `git push` a este repo es el único
 mecanismo de despliegue: nunca hay un `kubectl apply` manual salvo el arranque en frío inicial.
 
+## Levantarlo desde cero
+
+```bash
+bash scripts/bootstrap.sh
+```
+
+Automatiza lo que es automatizable (Kubernetes en OrbStack, ArgoCD, el app-of-apps) y te deja una lista
+clara de lo que no lo es (secretos reales) — ver [`docs/BOOTSTRAP.md`](docs/BOOTSTRAP.md) para el detalle
+paso a paso. `scripts/teardown.sh` hace lo contrario, para cuando quieras liberar recursos sin perder nada
+del repo.
+
 ## Patrón: App of Apps
 
 ```
