@@ -27,16 +27,22 @@ spec:
       # at most 262144 bytes". ServerSideApply es la solución recomendada
       # por el propio proyecto Kyverno para instalarse vía ArgoCD.
       - ServerSideApply=true
-  # Dos falsos positivos conocidos en las 22 CRDs de Kyverno, verificados
-  # campo a campo con "argocd app diff" antes de ignorarlos (no a ciegas):
+  # Falsos positivos conocidos en las CRDs de Kyverno, verificados campo a
+  # campo con "helm template" + comparación contra el recurso real antes
+  # de ignorarlos (no a ciegas):
   # - spec/conversion: el API server lo añade por defecto
   #   ("{strategy: None}") a cualquier CRD que no lo declare explícitamente.
-  # - metadata/labels: el chart renderiza un mapa vacío "labels: {}", pero
+  # - metadata/labels y metadata/annotations: en las CRDs del motor CEL de
+  #   Kyverno (ImageValidatingPolicy, ValidatingPolicy...) el chart
+  #   renderiza mapas vacíos ("labels: {}", "annotations: {}"), pero
   #   Kubernetes omite la clave por completo cuando está vacía en vez de
-  #   guardarla como "{}" — mismo objeto, distinta serialización.
+  #   guardarla como "{}" — mismo objeto, distinta serialización. Las CRDs
+  #   más antiguas (ClusterPolicy...) sí traen labels/annotations reales
+  #   del chart y nunca dieron este falso positivo.
   ignoreDifferences:
     - group: apiextensions.k8s.io
       kind: CustomResourceDefinition
       jsonPointers:
         - /spec/conversion
         - /metadata/labels
+        - /metadata/annotations
