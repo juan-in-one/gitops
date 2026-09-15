@@ -55,6 +55,7 @@ spec:
           "ghcr.io/juan-in-one/",
           "ghcr.io/dexidp/",
           "ghcr.io/external-secrets/",
+          "ghcr.io/jkroepke/",
           "docker.io/bitnamilegacy/",
           "docker.io/grafana/",
           "docker.io/kiwigrid/",
