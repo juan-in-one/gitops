@@ -75,14 +75,26 @@ echo "════════════════════════�
 # --for=condition=ready" se quedaría colgado para siempre en un volumen
 # nuevo. Se espera a que la fase sea Running (contenedor arrancado y con
 # nodo asignado), que es lo único que hace falta para poder hacer exec.
-echo "  Esperando a que vault-0 tenga contenedor arrancado..."
-for i in $(seq 1 60); do
+#
+# 120s (60x2s) se quedó corto en la práctica: al arrancar TODO el clúster
+# de golpe (Vault, Postgres, Kyverno, monitoring, las 4 apps...) en un
+# solo nodo local, hay contención real de CPU y de pull de imágenes, y
+# vault-0 puede tardar varios minutos en programarse. Margen generoso
+# (10 min) con progreso visible cada 20s para que no parezca colgado.
+echo "  Esperando a que vault-0 tenga contenedor arrancado (puede tardar varios minutos si el clúster está arrancando todo a la vez)..."
+phase=""
+for i in $(seq 1 150); do
   phase=$(kubectl get pod vault-0 -n vault -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
   [ "$phase" = "Running" ] && break
-  sleep 2
+  if [ $((i % 5)) -eq 0 ]; then
+    echo "  ...siguen esperando ($((i * 4))s, fase actual: ${phase:-<pod no existe todavía>})"
+  fi
+  sleep 4
 done
 if [ "$phase" != "Running" ]; then
-  echo "  vault-0 no llegó a Running a tiempo (fase: $phase). Revisa 'kubectl get pods -n vault'." >&2
+  echo "  vault-0 no llegó a Running en 10 minutos (fase: ${phase:-<pod no existe>})." >&2
+  echo "  Diagnóstico rápido: 'kubectl get pods -n vault' y 'kubectl describe pod vault-0 -n vault'." >&2
+  echo "  Si el pod ni existe, revisa que la Application 'vault' esté Synced: 'kubectl get application vault -n argocd'." >&2
   exit 1
 fi
 
@@ -145,13 +157,17 @@ PYEOF
 fi
 
 kubectl rollout restart deployment/external-secrets -n external-secrets >/dev/null
-kubectl rollout status deployment/external-secrets -n external-secrets --timeout=60s >/dev/null
+# Igual que con vault-0: bajo contención (todo el clúster arrancando a la
+# vez), 60s se queda corto para que el pod nuevo esté listo.
+kubectl rollout status deployment/external-secrets -n external-secrets --timeout=300s >/dev/null
 
 echo
 echo "════════════════════════════════════════"
 echo " 5/6 — Bases de datos por servicio en Postgres"
 echo "════════════════════════════════════════"
-kubectl wait --for=condition=ready pod/postgres-postgresql-0 -n platform --timeout=180s
+# Mismo margen generoso que vault-0 — Postgres puede tardar en programarse
+# si el nodo sigue saturado con el resto del clúster arrancando.
+kubectl wait --for=condition=ready pod/postgres-postgresql-0 -n platform --timeout=600s
 
 python3 - <<'PYEOF'
 import json, subprocess

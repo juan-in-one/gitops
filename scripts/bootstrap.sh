@@ -35,8 +35,8 @@ kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 # contra un clúster limpio.
 kubectl apply --server-side -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-echo "Esperando a que argocd-server esté listo (puede tardar un minuto)..."
-kubectl wait --for=condition=available --timeout=180s deployment/argocd-server -n argocd
+echo "Esperando a que argocd-server esté listo (puede tardar unos minutos: pull de varias imágenes a la vez en un nodo recién arrancado)..."
+kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
 
 echo
 echo "== 3/4 — Aplicar el app-of-apps =="
